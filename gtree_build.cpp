@@ -13,6 +13,7 @@
 #include<stack>
 #include<algorithm>
 #include<sys/time.h>
+#include<iostream>
 using namespace std;
 
 // MACRO for timing
@@ -108,7 +109,8 @@ void init_input(){
 	int nid;
 	double x,y;
 	while( fscanf(fin, "%d %lf %lf", &nid, &x, &y ) == 3 ){
-		Node node = { x, y };
+
+        Node node = { x, y };
 		Nodes.push_back(node);
 	}
 	fclose(fin);
@@ -721,6 +723,28 @@ int main(){
 
 	// dump distance matrix
 	hierarchy_shortest_path_save();
-
+    void display();
+    display();
 	return 0;
+}
+
+void display(){
+    auto dsy = [](vector<int>& n){
+        for(auto v:n){
+            cout<<v<<" ";
+        }
+        cout<<endl;
+    };
+    for(auto i = size_t(0); i < GTree.size(); ++i){
+        auto& v = GTree[i];
+        cout<<"GTree["<<i<<"]"<<"{"<<endl;
+        if(v.isleaf){
+            dsy(v.leafnodes);
+        }else{
+            dsy(v.union_borders);
+        }
+        dsy(v.union_borders);
+        dsy(v.mind);
+        cout<<"}"<<endl;
+    }
 }
