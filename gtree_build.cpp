@@ -56,6 +56,8 @@ typedef struct{
 // ----- min dis -----
 	vector<int> union_borders; // for non leaf node	
 	vector<int> mind; // min dis, row by row of union_borders
+    vector< vector<int > > paths;
+    //unordered_map<int, int> paths;
 // ----- for pre query init, OCCURENCE LIST in paper -----
 	vector<int> nonleafinvlist;
 	vector<int> leafinvlist;
@@ -531,6 +533,108 @@ vector<int> dijkstra_candidate( int s, vector<int> &cands, vector<Node> &graph )
 	return output;
 }
 
+vector<int> get_paths(int start, int end, unordered_map<int, int> paths){
+    vector<int> tmp;
+    bool is_reverse = false;
+    if (paths.end() != paths.find(start)){
+        if (paths[start] == start){
+            swap(start, end);
+            if (paths.end() != paths.find(start)){
+                if (paths[start] == start){
+                    tmp.push_back(start);
+                    return tmp;
+                }
+            }
+            is_reverse = true;
+        }
+    }
+    while(paths.end() != paths.find(start)){
+        tmp.push_back(start);
+        start = paths[start];
+        if (start == end){
+            tmp.push_back(start);
+            break;
+        }
+    }
+    if (is_reverse){
+        reverse(tmp.begin(),tmp.end());
+    }
+    return tmp;
+}
+vector<int> dijkstra_candidate_path( int s, vector<int> &cands, vector<Node> &graph, unordered_map<int, int>& paths ){
+    // init
+    set<int> todo;
+    todo.clear();
+    todo.insert(cands.begin(), cands.end());
+
+    unordered_map<int,int> result;
+    result.clear();
+    set<int> visited;
+    visited.clear();
+    unordered_map<int,int> q,prev;
+    q.clear();
+    q[s] = 0;
+    prev[s]=s;
+    // start
+    int min, minpos, adjnode, weight;
+
+    while( ! todo.empty() && ! q.empty() ){
+        min = -1;
+        for ( unordered_map<int,int>::iterator it = q.begin(); it != q.end(); it ++ ){
+            if ( min == -1 ){
+                minpos = it -> first;
+                min = it -> second;
+            }
+            else{
+                if ( it -> second < min ){
+                    min = it -> second;
+                    minpos = it -> first;
+                }
+            }
+        }
+
+        // put min to result, add to visited
+        result[minpos] = min;
+        paths[minpos] = prev[minpos];
+        visited.insert( minpos );
+        q.erase(minpos);
+
+        if ( todo.find( minpos ) != todo.end() ){
+            todo.erase( minpos );
+        }
+
+        // expand
+        for ( int i = 0; i < graph[minpos].adjnodes.size(); i++ ){
+            adjnode = graph[minpos].adjnodes[i];
+            if ( visited.find( adjnode ) != visited.end() ){
+                continue;
+            }
+            weight = graph[minpos].adjweight[i];
+
+            if ( q.find(adjnode) != q.end() ){
+                if ( min + weight < q[adjnode] ){
+                    q[adjnode] = min + weight;
+                }
+            }
+            else{
+                q[adjnode] = min + weight;
+            }
+            prev[adjnode] = minpos;
+
+        }
+
+    }
+
+    // output
+    vector<int> output;
+    for ( int i = 0; i < cands.size(); i++ ){
+        output.push_back( result[cands[i]] );
+    }
+
+    // return
+    return output;
+}
+
 // calculate the distance matrix, algorithm shown in section 5.2 of paper
 void hierarchy_shortest_path_calculation(){
 	// level traversal
@@ -545,7 +649,7 @@ void hierarchy_shortest_path_calculation(){
 	while( current.size() != 0 ){
 		mid = current;
 		current.clear();
-		for ( int i = 0; i < mid.size(); i++ ){
+        for ( int i = 0; i < mid.size(); i++ ) {
 			for ( int j = 0; j < GTree[mid[i]].children.size(); j++ ){
 				current.push_back( GTree[mid[i]].children[j] );
 			}
@@ -601,12 +705,14 @@ void hierarchy_shortest_path_calculation(){
 
 			for ( int k = 0; k < GTree[tn].union_borders.size(); k++ ){
 				//printf("DIJKSTRA...LEAF=%d BORDER=%d\n", tn, GTree[tn].union_borders[k] );
-				result = dijkstra_candidate( GTree[tn].union_borders[k], cands, graph );
+                unordered_map<int, int> paths;
+                result = dijkstra_candidate_path(GTree[tn].union_borders[k], cands, graph, paths);
 				//printf("DIJKSTRA...END\n");
 
 				// save to map
 				for ( int p = 0; p < result.size(); p ++ ){
 					GTree[tn].mind.push_back( result[p] );
+                    GTree[tn].paths.push_back(get_paths(GTree[tn].union_borders[k],cands[p%cands.size()], paths));
 					vertex_pairs[GTree[tn].union_borders[k]][cands[p]] = result[p];
 				}
 			}
