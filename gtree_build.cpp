@@ -1,105 +1,10 @@
 // macro for 64 bits file, larger than 2G
 #define _FILE_OFFSET_BITS 64
 
-#include<stdio.h>
-#include<metis.h>
-#include<vector>
-#include<stdlib.h>
-#include<memory.h>
-#include<unordered_map>
-#include<map>
-#include<set>
-#include<deque>
-#include<stack>
-#include<algorithm>
-#include<sys/time.h>
-#include<iostream>
-using namespace std;
+#include "gtree.h"
 
-// MACRO for timing
-struct timeval tv;
-long long ts, te;
-#define TIME_TICK_START gettimeofday( &tv, NULL ); ts = tv.tv_sec * 100000 + tv.tv_usec / 10;
-#define TIME_TICK_END gettimeofday( &tv, NULL ); te = tv.tv_sec * 100000 + tv.tv_usec / 10;
-#define TIME_TICK_PRINT(T) printf("%s RESULT: %lld (0.01MS)\r\n", (#T), te - ts );
-// ----------
+namespace build {
 
-#define FILE_NODE "cal.cnode"
-#define FILE_EDGE "cal.cedge"
-// set all edge weight to 1(unweighted graph)
-#define ADJWEIGHT_SET_TO_ALL_ONE true
-// we assume edge weight is integer, thus (input edge) * WEIGHT_INFLATE_FACTOR = (our edge weight)
-#define WEIGHT_INFLATE_FACTOR 100000
-// gtree fanout
-#define PARTITION_PART 2
-// gtree leaf node capacity = tau(in paper)
-#define LEAF_CAP 4
-// gtree index disk storage
-#define FILE_NODES_GTREE_PATH "cal.paths"
-#define FILE_GTREE 			  "cal.gtree"
-#define FILE_ONTREE_MIND	  "cal.minds"
-
-typedef struct{
-	double x,y;
-	vector<int> adjnodes;
-	vector<int> adjweight;
-	bool isborder;
-	vector<int> gtreepath; // this is used to do sub-graph locating
-}Node;
-
-typedef struct{
-	vector<int> borders;
-	vector<int> children;
-	bool isleaf;
-	vector<int> leafnodes;
-	int father;
-// ----- min dis -----
-	vector<int> union_borders; // for non leaf node	
-	vector<int> mind; // min dis, row by row of union_borders
-    vector< vector<int > > paths;
-    //unordered_map<int, int> paths;
-// ----- for pre query init, OCCURENCE LIST in paper -----
-	vector<int> nonleafinvlist;
-	vector<int> leafinvlist;
-	vector<int> up_pos;
-	vector<int> current_pos;
-}TreeNode;
-
-int noe; // number of edges
-vector<Node> Nodes;
-vector<TreeNode> GTree;
-
-// use for metis
-// idx_t = int64_t / real_t = double
-idx_t nvtxs; // |vertices|
-idx_t ncon; // number of weight per vertex
-idx_t* xadj; // array of adjacency of indices
-idx_t* adjncy; // array of adjacency nodes
-idx_t* vwgt; // array of weight of nodes
-idx_t* adjwgt; // array of weight of edges in adjncy
-idx_t nparts; // number of parts to partition
-idx_t objval; // edge cut for partitioning solution
-idx_t* part; // array of partition vector
-idx_t options[METIS_NOPTIONS]; // option array
-
-// METIS setting options
-void options_setting(){
-	METIS_SetDefaultOptions(options);
-	options[METIS_OPTION_PTYPE] = METIS_PTYPE_KWAY; // _RB
-	options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT; // _VOL
-	options[METIS_OPTION_CTYPE] = METIS_CTYPE_SHEM; // _RM
-	options[METIS_OPTION_IPTYPE] = METIS_IPTYPE_RANDOM; // _GROW _EDGE _NODE
-	options[METIS_OPTION_RTYPE] = METIS_RTYPE_FM; // _GREEDY _SEP2SIDED _SEP1SIDED
-	// options[METIS_OPTION_NCUTS] = 1;
-	// options[METIS_OPTION_NITER] = 10;
-	/* balance factor, used to be 500 */
-    options[METIS_OPTION_UFACTOR] = 100;
-	// options[METIS_OPTION_MINCONN];
-	options[METIS_OPTION_CONTIG] = 1;
-	// options[METIS_OPTION_SEED];
-	options[METIS_OPTION_NUMBERING] = 0;
-	// options[METIS_OPTION_DBGLVL] = 0;
-}
 
 // input init
 void init_input(){
@@ -805,7 +710,7 @@ void hierarchy_shortest_path_load(){
 	fclose(fin);
 }
 
-int main(){
+int bmain(){
 	// init
 	TIME_TICK_START
 	init();
@@ -853,4 +758,5 @@ void display(){
         dsy(v.mind);
         cout<<"}"<<endl;
     }
+}
 }
