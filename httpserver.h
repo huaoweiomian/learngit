@@ -14,6 +14,8 @@ public:
     void run(const QHostAddress &address = QHostAddress::Any,const quint16 &port = 8001);
 
 
+    bool parser_json(QByteArray &data, QPair<int, int> &ret);
+    QByteArray path(QPair<int, int> &bothendpoints);
 private slots:
     void newConnection();
     void readyRead();
