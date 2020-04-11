@@ -759,4 +759,43 @@ void display(){
         cout<<"}"<<endl;
     }
 }
+
+void mindpath_save(){
+    FILE *fout = fopen( FILE_MINDS_PATH, "wb" );
+    for (int pos = 0; pos < GTree.size(); ++pos){
+        vector< vector<int> >& path = GTree[pos].paths;
+        fwrite( &pos, sizeof(int), 1, fout );
+        int size = path.size();
+        fwrite( &size, sizeof(int), 1, fout );
+        for(auto v: path){
+            size = v.size();
+            int* buf = new int[v.size()];
+            fwrite( &size, sizeof(int), 1, fout );
+            copy( v.begin(), v.end(), buf );
+            fwrite( buf, sizeof(int), size, fout );
+            delete[] buf;
+        }
+    }
+    fclose(fout);
+}
+
+void mindpath_load(){
+    int pos = 0;
+    FILE* fin = fopen( FILE_MINDS_PATH, "rb");
+    while (fread(&pos,sizeof(int),1, fin)){
+        int size = 0;
+        fread(&size,sizeof(int),1, fin);
+        for (int i = 0; i < size; ++i){
+            int num = 0;
+            fread(&num,sizeof(int),1, fin);
+            int* buf = new int[num];
+            fread( buf, sizeof(int), num, fin );
+            vector<int> tmp(buf, buf+num);
+            GTree[pos].paths.push_back(tmp);
+            delete[] buf;
+        }
+    }
+    fclose(fin);
+}
+
 }

@@ -37,6 +37,7 @@ extern long long ts, te;
 #define FILE_NODES_GTREE_PATH "cal.paths"
 #define FILE_GTREE 			  "cal.gtree"
 #define FILE_ONTREE_MIND	  "cal.minds"
+#define FILE_MINDS_PATH       "cal.mindspath"
 
 #define FILE_OBJECT "cal.object"
 
