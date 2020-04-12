@@ -1,5 +1,5 @@
 #include "httpserver.h"
-
+#include "gtree.h"
 
 HttpServer &HttpServer::instance()
 {
@@ -81,6 +81,7 @@ bool HttpServer::parser_json(QByteArray& data, QPair<int, int>& ret){
     return true;
 }
 QByteArray HttpServer::path(QPair<int, int>& bothendpoints){
+    //query::pre_query_web(bothendpoints.second);
     QJsonArray ar = {bothendpoints.first,2,4,5,6,bothendpoints.second};
     QJsonObject obj;
     obj.insert("path", ar);
@@ -89,3 +90,4 @@ QByteArray HttpServer::path(QPair<int, int>& bothendpoints){
     qDebug()<<doc.toJson();
     return doc.toJson();
 }
+

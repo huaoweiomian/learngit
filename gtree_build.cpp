@@ -709,7 +709,8 @@ void hierarchy_shortest_path_load(){
 	}
 	fclose(fin);
 }
-
+void mindpath_save();
+void mindpath_load();
 int bmain(){
 	// init
 	TIME_TICK_START
@@ -734,8 +735,10 @@ int bmain(){
 
 	// dump distance matrix
 	hierarchy_shortest_path_save();
+
     void display();
     display();
+    mindpath_save();
 	return 0;
 }
 
@@ -779,23 +782,6 @@ void mindpath_save(){
     fclose(fout);
 }
 
-void mindpath_load(){
-    int pos = 0;
-    FILE* fin = fopen( FILE_MINDS_PATH, "rb");
-    while (fread(&pos,sizeof(int),1, fin)){
-        int size = 0;
-        fread(&size,sizeof(int),1, fin);
-        for (int i = 0; i < size; ++i){
-            int num = 0;
-            fread(&num,sizeof(int),1, fin);
-            int* buf = new int[num];
-            fread( buf, sizeof(int), num, fin );
-            vector<int> tmp(buf, buf+num);
-            GTree[pos].paths.push_back(tmp);
-            delete[] buf;
-        }
-    }
-    fclose(fin);
-}
+
 
 }

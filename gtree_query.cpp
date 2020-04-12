@@ -281,6 +281,58 @@ void pre_query(){
 		}
 	}
 }
+void pre_query_web(int enda){
+    vector<int> o;
+    o.push_back(enda);
+    // first clear all
+    for ( int i = 0; i < GTree.size(); i++ ){
+        GTree[i].nonleafinvlist.clear();
+        GTree[i].leafinvlist.clear();
+    }
+
+
+    // set OCCURENCE LIST
+    for ( int i = 0; i < o.size(); i++ ){
+        int current = Nodes[o[i]].gtreepath.back();
+        // add leaf inv list
+        int pos = lower_bound( GTree[current].leafnodes.begin(), GTree[current].leafnodes.end(), o[i] ) - GTree[current].leafnodes.begin();
+        GTree[current].leafinvlist.push_back(pos);
+        // recursive
+        int child;
+        while( current != -1 ){
+            child = current;
+            current = GTree[current].father;
+            if ( current == -1 ) break;
+            if ( find(GTree[current].nonleafinvlist.begin(), GTree[current].nonleafinvlist.end(), child ) == GTree[current].nonleafinvlist.end() ){
+                GTree[current].nonleafinvlist.push_back(child);
+            }
+        }
+    }
+
+    // up_pos & current_pos(used for quickly locating parent & child nodes)
+    unordered_map<int,int> pos_map;
+    for ( int i = 1; i < GTree.size(); i++ ){
+        GTree[i].current_pos.clear();
+        GTree[i].up_pos.clear();
+
+        // current_pos
+        pos_map.clear();
+        for ( int j = 0; j < GTree[i].union_borders.size(); j++ ){
+            pos_map[GTree[i].union_borders[j]] = j;
+        }
+        for ( int j = 0; j < GTree[i].borders.size(); j++ ){
+            GTree[i].current_pos.push_back(pos_map[GTree[i].borders[j]]);
+        }
+        // up_pos
+        pos_map.clear();
+        for ( int j = 0; j < GTree[GTree[i].father].union_borders.size(); j++ ){
+            pos_map[GTree[GTree[i].father].union_borders[j]] = j;
+        }
+        for ( int j = 0; j < GTree[i].borders.size(); j++ ){
+            GTree[i].up_pos.push_back(pos_map[GTree[i].borders[j]]);
+        }
+    }
+}
 
 // init search node
 typedef struct{
@@ -299,6 +351,7 @@ struct Status_query_comp{
 typedef struct{
 	int id;
 	int dis;
+    vector<int> paths;
 }ResultSet;
 
 // ----- CORE PART -----
@@ -508,7 +561,24 @@ vector<ResultSet> knn_query( int locid, int K ){
 
 	return rstset;
 }
-
+void mindpath_load(){
+    int pos = 0;
+    FILE* fin = fopen( FILE_MINDS_PATH, "rb");
+    while (fread(&pos,sizeof(int),1, fin)){
+        int size = 0;
+        fread(&size,sizeof(int),1, fin);
+        for (int i = 0; i < size; ++i){
+            int num = 0;
+            fread(&num,sizeof(int),1, fin);
+            int* buf = new int[num];
+            fread( buf, sizeof(int), num, fin );
+            vector<int> tmp(buf, buf+num);
+            GTree[pos].paths.push_back(tmp);
+            delete[] buf;
+        }
+    }
+    fclose(fin);
+}
 int qmain(){
 	// init
 	TIME_TICK_START
@@ -521,9 +591,9 @@ int qmain(){
 
 	// load distance matrix
 	hierarchy_shortest_path_load();
-
+    mindpath_load();
 	// pre query init
-	pre_query();
+
 
 	// knn search
 	// example
@@ -532,9 +602,9 @@ int qmain(){
 	vector<ResultSet> result;
 	while(scanf("%d %d", &locid, &K) == 2){
 		if (locid >= Nodes.size() || locid < 0 || K < 0 || K > Nodes.size()) continue;
-
+        pre_query_web(K);
 		TIME_TICK_START
-		result = knn_query(locid, K);
+        result = knn_query(locid, 1);
 		TIME_TICK_END
 		for ( int i = 0; i < result.size(); i++ ){
 			printf("ID=%d DIS=%d\n", result[i].id, result[i].dis );

@@ -85,4 +85,12 @@ extern idx_t* part; // array of partition vector
 extern idx_t options[METIS_NOPTIONS]; // option array
 
 extern void options_setting();
+namespace query {
+    void pre_query_web(int enda);
+    int qmain();
+}
+namespace build {
+int bmain();
+}
+
 #endif // GTREE_H
