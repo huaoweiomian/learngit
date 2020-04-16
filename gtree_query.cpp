@@ -368,6 +368,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 
 	// init upstream
 	unordered_map<int, vector<int> > itm; // intermediate answer, tree node -> array
+    unordered_map<int, vector< vector<int> > > paths;
 	itm.clear();
 	int tn, cid, posa, posb, min, dis;
 	for ( int i = Nodes[locid].gtreepath.size() - 1; i > 0; i-- ){
@@ -379,28 +380,37 @@ vector<ResultSet> knn_query( int locid, int K ){
 
 			for ( int j = 0; j < GTree[tn].borders.size(); j++ ){
 				itm[tn].push_back( GTree[tn].mind[ j * GTree[tn].leafnodes.size() + posa ] );
+                paths[tn].push_back(GTree[tn].paths[ j * GTree[tn].leafnodes.size() + posa ] );
 			}
 		}
 		else{
 			cid = Nodes[locid].gtreepath[i+1];
 			for ( int j = 0; j < GTree[tn].borders.size(); j++ ){
+                vector<int> pathmin;
 				min = -1;
 				posa = GTree[tn].current_pos[j];
 				for ( int k = 0; k < GTree[cid].borders.size(); k++ ){
 					posb = GTree[cid].up_pos[k];
+                    vector<int> tmp = paths[cid][k];
+                    tmp.insert(tmp.end(), GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].begin(),
+                            GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].end());
 					dis = itm[cid][k] + GTree[tn].mind[ posa * GTree[tn].union_borders.size() + posb ];
 					// get min
+
 					if ( min == -1 ){
 						min = dis;
+                        pathmin = tmp;
 					}
 					else{
 						if ( dis < min ){
 							min = dis;
+                            pathmin = tmp;
 						}
 					}
 				}
 				// update
 				itm[tn].push_back( min );
+                paths[tn].push_back(pathmin);
 			}
 		}
 
