@@ -340,6 +340,7 @@ typedef struct{
 	bool isvertex;
 	int lca_pos;
 	int dis;
+    vector<int> path;
 }Status_query;
 
 struct Status_query_comp{
@@ -491,20 +492,32 @@ vector<ResultSet> knn_query( int locid, int K ){
 					// brothers
 					else if ( GTree[child].father == GTree[son].father ){
 						itm[child].clear();
+                        paths[child].clear();
+                        vector<int> pathmin;
 						allmin = -1;
-
+                        bool is_first = true;
 						for ( int j = 0; j < GTree[child].borders.size(); j++ ){
-							min = -1;
+                            min = -1;
 							posa = GTree[child].up_pos[j];
 							for( int k = 0; k < GTree[son].borders.size(); k++ ){
+                                vector<int> tmp;
 								posb = GTree[son].up_pos[k];
 								dis = itm[son][k] + GTree[top.id].mind[ posa * GTree[top.id].union_borders.size() + posb ];
+                                tmp = paths[son][k];
+                                tmp.insert(tmp.end(),GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].begin(),
+                                        GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].end());
+                                if(is_first){
+                                    pathmin = tmp;
+                                    is_first = false;
+                                }
 								if ( min == -1 ){
 									min = dis;
+
 								}
 								else{
 									if ( dis < min ){
 										min = dis;
+                                        pathmin = tmp;
 									}
 								}
 							}
@@ -517,7 +530,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 								allmin = min;
 							}
 						}
-						Status_query status = { child, false, top.lca_pos, allmin };
+                        Status_query status = { child, false, top.lca_pos, allmin, pathmin };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
