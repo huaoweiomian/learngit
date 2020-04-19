@@ -91,6 +91,8 @@ namespace query {
 }
 namespace build {
 int bmain();
+vector<int> get_paths(int start, int end, unordered_map<int, int> paths);
+vector<int> dijkstra_candidate_path( int s, vector<int> &cands, vector<Node> &graph, unordered_map<int, int>& paths );
 }
 
 #endif // GTREE_H

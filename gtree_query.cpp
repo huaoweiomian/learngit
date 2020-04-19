@@ -431,7 +431,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 		pq.pop_back();
 
 		if ( top.isvertex ){
-			ResultSet rs = { top.id, top.dis };
+            ResultSet rs = { top.id, top.dis,top.path };
 			rstset.push_back(rs);
 		}
 		else{
@@ -443,9 +443,11 @@ vector<ResultSet> knn_query( int locid, int K ){
 					for ( int i = 0; i < GTree[top.id].leafinvlist.size(); i++ ){
 						cands.push_back( GTree[top.id].leafnodes[GTree[top.id].leafinvlist[i]] );
 					}
-					result = dijkstra_candidate( locid, cands, Nodes );
+                    //result = dijkstra_candidate( locid, cands, Nodes );
+                    unordered_map<int, int> paths;
+                    result = build::dijkstra_candidate_path(locid, cands, Nodes, paths);
 					for ( int i = 0; i < cands.size(); i++ ){
-						Status_query status = { cands[i], true, top.lca_pos, result[i] };
+                        Status_query status = { cands[i], true, top.lca_pos, result[i], build::get_paths(locid,i, paths) };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
@@ -458,21 +460,27 @@ vector<ResultSet> knn_query( int locid, int K ){
 						posa = GTree[top.id].leafinvlist[i];
 						vertex = GTree[top.id].leafnodes[posa];
 						allmin = -1;
-
+                        vector<int> allpathmin;
 						for ( int k = 0; k < GTree[top.id].borders.size(); k++ ){
+                            vector<int> tmp;
 							dis = itm[top.id][k] + GTree[top.id].mind[ k * GTree[top.id].leafnodes.size() + posa ];
+                            tmp = paths[top.id][k];
+                            tmp.insert(tmp.end(),GTree[top.id].paths[  k * GTree[top.id].leafnodes.size() + posa  ].begin(),
+                                     GTree[top.id].paths[k * GTree[top.id].leafnodes.size() + posa ].end());
 							if ( allmin == -1 ){
 								allmin = dis;
+                                allpathmin = tmp;
 							}
 							else{
 								if ( dis < allmin ){
 									allmin = dis;
+                                    allpathmin = tmp;
 								}
 							}
 
 						}
 						
-						Status_query status = { vertex, true, top.lca_pos, allmin };
+                        Status_query status = { vertex, true, top.lca_pos, allmin,allpathmin };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 
@@ -485,7 +493,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 					son = Nodes[locid].gtreepath[ top.lca_pos + 1 ];
 					// on gtreepath
 					if ( child == son ){
-						Status_query status = { child, false, top.lca_pos + 1, 0 };
+                        Status_query status = { child, false, top.lca_pos + 1, 0,vector<int>() };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
@@ -493,10 +501,10 @@ vector<ResultSet> knn_query( int locid, int K ){
 					else if ( GTree[child].father == GTree[son].father ){
 						itm[child].clear();
                         paths[child].clear();
-                        vector<int> pathmin;
+                        vector<int> allpathmin;
 						allmin = -1;
-                        bool is_first = true;
 						for ( int j = 0; j < GTree[child].borders.size(); j++ ){
+                            vector<int> pathmin;
                             min = -1;
 							posa = GTree[child].up_pos[j];
 							for( int k = 0; k < GTree[son].borders.size(); k++ ){
@@ -506,13 +514,9 @@ vector<ResultSet> knn_query( int locid, int K ){
                                 tmp = paths[son][k];
                                 tmp.insert(tmp.end(),GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].begin(),
                                         GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].end());
-                                if(is_first){
-                                    pathmin = tmp;
-                                    is_first = false;
-                                }
 								if ( min == -1 ){
 									min = dis;
-
+                                    pathmin = tmp;
 								}
 								else{
 									if ( dis < min ){
@@ -522,15 +526,18 @@ vector<ResultSet> knn_query( int locid, int K ){
 								}
 							}
 							itm[child].push_back(min);	
+                            paths[child].push_back(pathmin);
 							// update all min
 							if ( allmin == -1 ){
 								allmin = min;
+                                allpathmin = pathmin;
 							}
 							else if ( min < allmin ){
 								allmin = min;
+                                allpathmin = pathmin;
 							}
 						}
-                        Status_query status = { child, false, top.lca_pos, allmin, pathmin };
+                        Status_query status = { child, false, top.lca_pos, allmin, allpathmin };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
@@ -538,32 +545,42 @@ vector<ResultSet> knn_query( int locid, int K ){
 					else{
 						itm[child].clear();
 						allmin = -1;
-						
+                        vector<int> allpathmin;
 						for ( int j = 0; j < GTree[child].borders.size(); j++ ){
 							min = -1;
+                            vector<int> pathmin;
 							posa = GTree[child].up_pos[j];
 							for ( int k = 0; k < GTree[top.id].borders.size(); k++ ){
+                                vector<int> tmp;
 								posb = GTree[top.id].current_pos[k];
 								dis = itm[top.id][k] + GTree[top.id].mind[ posa * GTree[top.id].union_borders.size() + posb ];
+                                tmp = paths[top.id][k];
+                                tmp.insert(tmp.end(),GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].begin(),
+                                        GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].end());
 								if ( min == -1 ){
 									min = dis;
+                                    pathmin = tmp;
 								}
 								else{
 									if ( dis < min ){
 										min = dis;
+                                        pathmin = tmp;
 									}
 								}
 							}
 							itm[child].push_back(min);
+                            paths[child].push_back(pathmin);
 							// update all min
 							if ( allmin == -1 ){
 								allmin = min;
+                                allpathmin = pathmin;
 							}
 							else if ( min < allmin ){
 								allmin = min;
+                                allpathmin = pathmin;
 							}
 						}
-						Status_query status = { child, false, top.lca_pos, allmin };
+                        Status_query status = { child, false, top.lca_pos, allmin,allpathmin };
                         pq.push_back(status);
                         push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
