@@ -361,6 +361,21 @@ typedef struct{
 //        K = top-K
 // output: a vector of ResultSet, each is a tuple (node id, shortest path), ranked by shortest path distance from query location
 vector<ResultSet> knn_query( int locid, int K ){
+    auto _get_path = [](vector<int> start, vector<int> patha)->vector<int> {
+        if (patha.empty()){
+            return start;
+        }
+        if(patha.back() != start.back()){
+            auto bg = patha.begin();
+            if(start[0] == patha[0])
+                bg++;
+            start.insert(start.end(),bg, patha.end());
+            return start;
+        }
+        reverse(patha.begin(),patha.end());
+        start.insert(start.end(),patha.begin()+1, patha.end());
+        return start;
+    };
 	// init priority queue & result set
 	vector<Status_query> pq;
 	pq.clear();
@@ -381,7 +396,9 @@ vector<ResultSet> knn_query( int locid, int K ){
 
 			for ( int j = 0; j < GTree[tn].borders.size(); j++ ){
 				itm[tn].push_back( GTree[tn].mind[ j * GTree[tn].leafnodes.size() + posa ] );
-                paths[tn].push_back(GTree[tn].paths[ j * GTree[tn].leafnodes.size() + posa ] );
+                auto tmp = GTree[tn].paths[ j * GTree[tn].leafnodes.size() + posa ];
+                reverse(tmp.begin(),tmp.end());
+                paths[tn].push_back(tmp);
 			}
 		}
 		else{
@@ -392,9 +409,9 @@ vector<ResultSet> knn_query( int locid, int K ){
 				posa = GTree[tn].current_pos[j];
 				for ( int k = 0; k < GTree[cid].borders.size(); k++ ){
 					posb = GTree[cid].up_pos[k];
-                    vector<int> tmp = paths[cid][k];
-                    tmp.insert(tmp.end(), GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].begin(),
-                            GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].end());
+                    vector<int> tmp = GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ];
+                    //tmp.insert(tmp.end(), GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].begin(),
+                            //GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].end());
 					dis = itm[cid][k] + GTree[tn].mind[ posa * GTree[tn].union_borders.size() + posb ];
 					// get min
 
@@ -444,10 +461,10 @@ vector<ResultSet> knn_query( int locid, int K ){
 						cands.push_back( GTree[top.id].leafnodes[GTree[top.id].leafinvlist[i]] );
 					}
                     //result = dijkstra_candidate( locid, cands, Nodes );
-                    unordered_map<int, int> paths;
-                    result = build::dijkstra_candidate_path(locid, cands, Nodes, paths);
+                    unordered_map<int, int> tmppaths;
+                    result = build::dijkstra_candidate_path(locid, cands, Nodes, tmppaths);
 					for ( int i = 0; i < cands.size(); i++ ){
-                        Status_query status = { cands[i], true, top.lca_pos, result[i], build::get_paths(locid,i, paths) };
+                        Status_query status = { cands[i], true, top.lca_pos, result[i], build::get_paths(locid,cands[i], tmppaths) };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
@@ -462,11 +479,8 @@ vector<ResultSet> knn_query( int locid, int K ){
 						allmin = -1;
                         vector<int> allpathmin;
 						for ( int k = 0; k < GTree[top.id].borders.size(); k++ ){
-                            vector<int> tmp;
+                            vector<int> tmp = _get_path(paths[top.id][k], GTree[top.id].paths[  k * GTree[top.id].leafnodes.size() + posa  ]);
 							dis = itm[top.id][k] + GTree[top.id].mind[ k * GTree[top.id].leafnodes.size() + posa ];
-                            tmp = paths[top.id][k];
-                            tmp.insert(tmp.end(),GTree[top.id].paths[  k * GTree[top.id].leafnodes.size() + posa  ].begin(),
-                                     GTree[top.id].paths[k * GTree[top.id].leafnodes.size() + posa ].end());
 							if ( allmin == -1 ){
 								allmin = dis;
                                 allpathmin = tmp;
@@ -489,7 +503,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 			}
 			else{
 				for ( int i = 0; i < GTree[top.id].nonleafinvlist.size(); i++ ){
-					child = GTree[top.id].nonleafinvlist[i];
+                    child = GTree[top.id].nonleafinvlist[i];
 					son = Nodes[locid].gtreepath[ top.lca_pos + 1 ];
 					// on gtreepath
 					if ( child == son ){
@@ -508,12 +522,9 @@ vector<ResultSet> knn_query( int locid, int K ){
                             min = -1;
 							posa = GTree[child].up_pos[j];
 							for( int k = 0; k < GTree[son].borders.size(); k++ ){
-                                vector<int> tmp;
 								posb = GTree[son].up_pos[k];
 								dis = itm[son][k] + GTree[top.id].mind[ posa * GTree[top.id].union_borders.size() + posb ];
-                                tmp = paths[son][k];
-                                tmp.insert(tmp.end(),GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].begin(),
-                                        GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].end());
+                                vector<int> tmp = _get_path(paths[son][k],GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ]);
 								if ( min == -1 ){
 									min = dis;
                                     pathmin = tmp;
@@ -551,12 +562,9 @@ vector<ResultSet> knn_query( int locid, int K ){
                             vector<int> pathmin;
 							posa = GTree[child].up_pos[j];
 							for ( int k = 0; k < GTree[top.id].borders.size(); k++ ){
-                                vector<int> tmp;
 								posb = GTree[top.id].current_pos[k];
 								dis = itm[top.id][k] + GTree[top.id].mind[ posa * GTree[top.id].union_borders.size() + posb ];
-                                tmp = paths[top.id][k];
-                                tmp.insert(tmp.end(),GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].begin(),
-                                        GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ].end());
+                                vector<int> tmp = _get_path(paths[top.id][k], GTree[top.id].paths[ posa * GTree[top.id].union_borders.size() + posb ]);
 								if ( min == -1 ){
 									min = dis;
                                     pathmin = tmp;
@@ -633,7 +641,13 @@ int qmain(){
 	hierarchy_shortest_path_load();
     mindpath_load();
 	// pre query init
-
+    auto fpt = [](vector<int> &vs){
+        cout<<"path: ";
+        for(auto v : vs){
+            cout<<v<<" ";
+        }
+        cout<<endl;
+    };
 
 	// knn search
 	// example
@@ -648,6 +662,7 @@ int qmain(){
 		TIME_TICK_END
 		for ( int i = 0; i < result.size(); i++ ){
 			printf("ID=%d DIS=%d\n", result[i].id, result[i].dis );
+            fpt(result[i].paths);
 		}
 		TIME_TICK_PRINT("KNN_SEARCH")
 	}
