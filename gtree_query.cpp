@@ -367,7 +367,7 @@ vector<ResultSet> knn_query( int locid, int K ){
         }
         if(patha.back() != start.back()){
             auto bg = patha.begin();
-            if(start[0] == patha[0])
+            if(start.back() == patha[0])
                 bg++;
             start.insert(start.end(),bg, patha.end());
             return start;
@@ -409,9 +409,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 				posa = GTree[tn].current_pos[j];
 				for ( int k = 0; k < GTree[cid].borders.size(); k++ ){
 					posb = GTree[cid].up_pos[k];
-                    vector<int> tmp = GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ];
-                    //tmp.insert(tmp.end(), GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].begin(),
-                            //GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ].end());
+                    vector<int> tmp = _get_path(paths[cid][k], GTree[tn].paths[ posa * GTree[tn].union_borders.size() + posb ]);
 					dis = itm[cid][k] + GTree[tn].mind[ posa * GTree[tn].union_borders.size() + posb ];
 					// get min
 

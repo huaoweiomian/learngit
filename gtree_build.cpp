@@ -519,13 +519,13 @@ vector<int> dijkstra_candidate_path( int s, vector<int> &cands, vector<Node> &gr
             if ( q.find(adjnode) != q.end() ){
                 if ( min + weight < q[adjnode] ){
                     q[adjnode] = min + weight;
+                    prev[adjnode] = minpos;
                 }
             }
             else{
                 q[adjnode] = min + weight;
+                prev[adjnode] = minpos;
             }
-            prev[adjnode] = minpos;
-
         }
 
     }
