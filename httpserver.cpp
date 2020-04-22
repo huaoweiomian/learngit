@@ -40,11 +40,10 @@ void HttpServer::readyRead()
     http += "Content-Type: text/html;charset=utf-8\r\n";
     http += "Connection: keep-alive\r\n";
     http += QString("Content-Length: %1\r\n\r\n").arg(QString::number(response.size()));
-    http = "[1,2,3,4]";
-    socket->write(path(parameter));
-    //socket->write(response);
+    response = path(parameter);
+    socket->write(response);
     socket->flush();
-    //socket->waitForBytesWritten(http.size() + response.size());
+    socket->waitForBytesWritten(http.size() + response.size());
     socket->close();
 }
 
@@ -81,8 +80,12 @@ bool HttpServer::parser_json(QByteArray& data, QPair<int, int>& ret){
     return true;
 }
 QByteArray HttpServer::path(QPair<int, int>& bothendpoints){
-    //query::pre_query_web(bothendpoints.second);
-    QJsonArray ar = {bothendpoints.first,2,4,5,6,bothendpoints.second};
+    vector<int> paths = query::search(bothendpoints.first,bothendpoints.second);
+    QJsonArray ar;
+    for (auto v : paths){
+        QJsonValue jv(v);
+        ar.append(jv);
+    }
     QJsonObject obj;
     obj.insert("path", ar);
     QJsonDocument doc;

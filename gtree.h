@@ -88,6 +88,7 @@ extern void options_setting();
 namespace query {
     void pre_query_web(int enda);
     int qmain();
+    vector<int> search(int start, int end);
 }
 namespace build {
 int bmain();

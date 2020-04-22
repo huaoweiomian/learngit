@@ -625,6 +625,46 @@ void mindpath_load(){
     }
     fclose(fin);
 }
+vector<int> search(int start, int end){
+    // init
+    TIME_TICK_START
+            init();
+    TIME_TICK_END
+
+    TIME_TICK_PRINT("INIT")
+
+            // load gtree index
+    gtree_load();
+
+    // load distance matrix
+    hierarchy_shortest_path_load();
+    mindpath_load();
+    // pre query init
+    auto fpt = [](vector<int> &vs){
+        cout<<"path: ";
+        for(auto v : vs){
+            cout<<v<<" ";
+        }
+        cout<<endl;
+    };
+    // knn search
+    // example
+    printf("KNN Search Started...\n");
+    int locid = start, K = end;
+    vector<ResultSet> result;
+    if (locid >= Nodes.size() || locid < 0 || K < 0 || K > Nodes.size())
+        return vector<int>();
+    pre_query_web(K);
+    TIME_TICK_START
+            result = knn_query(locid, 1);
+    TIME_TICK_END
+            for ( int i = 0; i < result.size(); i++ ){
+        printf("ID=%d DIS=%d\n", result[i].id, result[i].dis );
+        fpt(result[i].paths);
+    }
+    TIME_TICK_PRINT("KNN_SEARCH")
+            return result[0].paths;
+}
 int qmain(){
 	// init
 	TIME_TICK_START

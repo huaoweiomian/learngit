@@ -5,8 +5,8 @@
 using namespace std;
 int main(int argc, char *argv[]){
     QCoreApplication a(argc, argv);
-    //HttpServer::instance().run();
+    HttpServer::instance().run();
     //build::bmain();
-    query::qmain();
+    //query::qmain();
     return a.exec();
 }
