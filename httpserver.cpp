@@ -79,6 +79,7 @@ bool HttpServer::parser_json(QByteArray& data, QPair<int, int>& ret){
     ret.second = obj["end"].toInt();
     return true;
 }
+
 QByteArray HttpServer::path(QPair<int, int>& bothendpoints){
     vector<int> paths = query::search(bothendpoints.first,bothendpoints.second);
     QJsonArray ar;
