@@ -27,7 +27,7 @@ long long ts, te;
      // options[METIS_OPTION_NCUTS] = 1;
      // options[METIS_OPTION_NITER] = 10;
      /* balance factor, used to be 500 */
-     options[METIS_OPTION_UFACTOR] = 500;
+     options[METIS_OPTION_UFACTOR] = 100;
      // options[METIS_OPTION_MINCONN];
      options[METIS_OPTION_CONTIG] = 1;
      // options[METIS_OPTION_SEED];

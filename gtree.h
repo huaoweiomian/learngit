@@ -32,7 +32,7 @@ extern long long ts, te;
 // gtree fanout
 #define PARTITION_PART 2
 // gtree leaf node capacity = tau(in paper)
-#define LEAF_CAP 4
+#define LEAF_CAP 5
 // gtree index disk storage
 #define FILE_NODES_GTREE_PATH "cal.paths"
 #define FILE_GTREE 			  "cal.gtree"
