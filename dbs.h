@@ -20,6 +20,7 @@ public:
     bool auth(QString name, QString change);
     bool history(QString admin,QString name, QVector<QString>& ret);
     bool history_admin(QString admin, QString name, QVector<QString>& ret);
+    bool insert_path(QString name, QString paths);
     QSqlDatabase db;
     QSqlQuery q;
 signals:

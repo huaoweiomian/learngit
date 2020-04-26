@@ -160,17 +160,14 @@ void HttpServer::readyRead()
     }
     qDebug() << "Request Data:" << request;
     QPair<int,int> parameter;
-    if (!parser_json(request,parameter)){
+    QString name;
+    if (!parser_json(request,parameter,name)){
         qDebug()<<"parameter error.";
         socket->write("parameter error.");
         return;
     }
-    static int count = 0;
-    count++;
     QByteArray response;
-    QString http = "HTTP/1.1 200 OK\r\n";
-    http += "Content-Type: application/json\r\n";
-    response = path(parameter);
+    response = path(name,parameter);
     socket->write( response);
     socket->flush();
     socket->waitForBytesWritten(response.size());
@@ -208,7 +205,7 @@ HttpServer::~HttpServer()
 
 }
 
-bool HttpServer::parser_json(QByteArray& data, QPair<int, int>& ret){
+bool HttpServer::parser_json(QByteArray& data, QPair<int, int>& ret,QString& name){
     QString tmp = data;
     int pos = tmp.indexOf("{");
     if (pos == -1){
@@ -223,24 +220,39 @@ bool HttpServer::parser_json(QByteArray& data, QPair<int, int>& ret){
         return false;
     }
     QJsonObject obj = doc.object();
-    qDebug()<<obj["start"].toInt() << "   " <<obj["end"].toInt();
+    qDebug()<<obj["name"].toString()<<" "<<obj["start"].toInt() << "   " <<obj["end"].toInt();
     ret.first = obj["start"].toInt();
     ret.second = obj["end"].toInt();
+    name = obj["name"].toString();
+    if(name.isEmpty())
+        return false;
     return true;
 }
 
-QByteArray HttpServer::path(QPair<int, int>& bothendpoints){
+QByteArray HttpServer::path(QString name,QPair<int, int>& bothendpoints){
     vector<int> paths = query::search(bothendpoints.first,bothendpoints.second);
     QJsonArray ar;
+    QString pathstr;
+    bool flag = true;
     for (auto v : paths){
         QJsonValue jv(v);
         ar.append(jv);
+        QString tmp;
+        tmp.setNum(v);
+        if(flag){
+            flag = false;
+            pathstr += tmp;
+        }else{
+            pathstr = pathstr + "," + tmp;
+        }
     }
+
     QJsonObject obj;
     obj.insert("path", ar);
     QJsonDocument doc;
     doc.setObject(obj);
     qDebug()<<doc.toJson();
+    pDbs->insert_path(name,pathstr);
     return doc.toJson();
 }
 

@@ -112,3 +112,15 @@ bool DBS::history_admin(QString admin, QString name, QVector<QString>& ret)
     }
     return history(admin,name, ret);
 }
+
+bool DBS::insert_path(QString name, QString paths)
+{
+    q.prepare("INSERT INTO history (name, path) VALUES (?, ?);");
+    q.addBindValue(name);
+    q.addBindValue(paths);
+    bool ret = q.exec();
+    if (!ret){
+        qDebug()<<q.lastError();
+    }
+    return ret;
+}
