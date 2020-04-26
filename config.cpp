@@ -29,6 +29,7 @@ bool config::init()
     password = obj["password"].toString();
     db = obj["db"].toString();
     port = obj["port"].toInt();
+    qDebug()<<"ip:"<<ip<<" "<<"uname:"<<uname<<" "<<"password:"<<password<<" "<<"db:"<<db<<" "<<"port:"<<port;
     return true;
 }
 
