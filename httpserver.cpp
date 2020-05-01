@@ -26,7 +26,7 @@ void HttpServer::auth(QByteArray& req,QTcpSocket *socket){
         ret_help(socket, f);
         return;
     }
-
+    //获取参数
     QJsonParseError pe;
     QJsonDocument doc = QJsonDocument::fromJson(json,&pe);
     if (pe.error != QJsonParseError::NoError){
@@ -38,6 +38,7 @@ void HttpServer::auth(QByteArray& req,QTcpSocket *socket){
     qDebug()<<obj["name"].toString() << "   " <<obj["change"].toString();
     QString name = obj["name"].toString();
     QString change = obj["change"].toString();
+    //修改普通用户权限
     if (pDbs->auth(name,change)){
         ret_help(socket,s);
         return;
@@ -47,11 +48,13 @@ void HttpServer::auth(QByteArray& req,QTcpSocket *socket){
 
 void HttpServer::history(QByteArray &req, QTcpSocket *socket, bool is_admin)
 {
+    //默认普通用户查询历史
     auto func = &DBS::history;
-    if(is_admin){
+    if(is_admin){//如果是管理员，就切换成管理查询历史
         func = &DBS::history_admin;
     }
     const QByteArray f = "{\"history\":[]}";
+    //解析查询参数
     QByteArray json;
     if (!get_json(req, json)){
         ret_help(socket, f);
@@ -71,10 +74,12 @@ void HttpServer::history(QByteArray &req, QTcpSocket *socket, bool is_admin)
     QString admin = obj["admin"].toString();
 
     QVector<QString> ret;
+    //查询
     if (!(pDbs->*func)(admin, name, ret)){
         ret_help(socket, f);
         return;
     }
+    //组织返回值
     QJsonArray ar;
     for (auto v:ret){
         QJsonValue tmp(v);
@@ -91,6 +96,7 @@ void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
     const QByteArray f = "{\"status\":1}";
     const QByteArray s = "{\"status\":0}";
     QByteArray json;
+    //解析登陆或注册参数
     if (!get_json(req, json)){
         socket->write(f);
         socket->flush();
@@ -114,6 +120,7 @@ void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
     QString name = obj["name"].toString();
     QString pwd = obj["pwd"].toString();
     int type = obj["type"].toInt();
+    //注册
     if (type == 1){//sign up
         if(!pDbs->insert_usr(name,pwd)){
             socket->write(f);
@@ -122,7 +129,7 @@ void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
             socket->close();
             return;
         }
-    }else{
+    }else{//登陆
         if(!pDbs->login(name,pwd)){
             socket->write(f);
             socket->flush();
@@ -142,31 +149,38 @@ void HttpServer::readyRead()
     QByteArray signin = "/signin";
     QTcpSocket *socket = qobject_cast<QTcpSocket*>(sender());
     QByteArray request = socket->readAll();
+    //登陆或注册服务
     if (-1 != request.indexOf(signin)){
         this->signin(request,socket);
         return;
     }
+    //管理员查询历史
     if (-1 != request.indexOf("/historyadmin")){
         this->history(request,socket, true);
         return;
     }
+    //普通用户查询历史
     if (-1 != request.indexOf("/history")){
         this->history(request,socket, false);
         return;
     }
+    //普通用户变成管理员
     if (-1 != request.indexOf("/auth")){
         this->auth(request,socket);
         return;
     }
+    //路径查询
     qDebug() << "Request Data:" << request;
     QPair<int,int> parameter;
     QString name;
+    //解析路径查询参数
     if (!parser_json(request,parameter,name)){
         qDebug()<<"parameter error.";
         socket->write("parameter error.");
         return;
     }
     QByteArray response;
+    //根据参数调用查询算法进行查询
     response = path(name,parameter);
     socket->write( response);
     socket->flush();
