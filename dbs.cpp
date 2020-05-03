@@ -118,7 +118,7 @@ bool DBS::history_admin(QString admin, QString name, QVector<QString>& ret)
     if(!is_admin(admin)){
         return false;
     }
-    return 平(admin,name, ret);
+    return history(admin,name, ret);
 }
 
 bool DBS::insert_path(QString name, QString paths)

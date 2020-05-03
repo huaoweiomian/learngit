@@ -138,11 +138,7 @@ void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
             return;
         }
     }
-
-    socket->write(s);
-    socket->flush();
-    socket->waitForBytesWritten(s.size());
-    socket->close();
+    ret_help (socket,s);
 }
 void HttpServer::readyRead()
 {
@@ -182,15 +178,18 @@ void HttpServer::readyRead()
     QByteArray response;
     //根据参数调用查询算法进行查询
     response = path(name,parameter);
-    socket->write( response);
-    socket->flush();
-    socket->waitForBytesWritten(response.size());
-    socket->close();
+    ret_help(socket,response);
 }
 
 void HttpServer::ret_help(QTcpSocket *socket, QByteArray ret)
 {
-    socket->write(ret);
+    QString http = "HTTP/1.1 200 OK\r\n";
+    http += "Server: qtsvr\r\n";
+    http += "Content-Type: application/json;charset=utf-8\r\n";
+    http += "Connection: keep-alive\r\n";
+    http += QString("Content-Length: %1\r\n\r\n").arg(ret.size());
+
+    socket->write(http.toUtf8()+ret);
     socket->flush();
     socket->waitForBytesWritten(ret.size());
     socket->close();
