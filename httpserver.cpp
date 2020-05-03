@@ -92,6 +92,28 @@ void HttpServer::history(QByteArray &req, QTcpSocket *socket, bool is_admin)
     doc = QJsonDocument(obj);
     ret_help(socket,doc.toJson());
 }
+void HttpServer::list(QByteArray& req,QTcpSocket *socket){
+
+    const QByteArray f = "{\"names\":[]}";
+    QVector<QString> ret;
+    //查询
+    if (!(pDbs->list(ret))){
+        ret_help(socket, f);
+        return;
+    }
+    //组织返回值
+    QJsonArray ar;
+    for (auto v:ret){
+        QJsonValue tmp(v);
+        ar.push_back(tmp);
+    }
+
+    QJsonObject obj = QJsonObject();
+    QJsonValue v(ar);
+    obj["names"] = v;
+    QJsonDocument doc = QJsonDocument(obj);
+    ret_help(socket,doc.toJson());
+}
 void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
     const QByteArray f = "{\"status\":1}";
     const QByteArray s = "{\"status\":0}";
@@ -163,6 +185,11 @@ void HttpServer::readyRead()
     //普通用户变成管理员
     if (-1 != request.indexOf("/auth")){
         this->auth(request,socket);
+        return;
+    }
+    //用户列表
+    if (-1 != request.indexOf("/list")){
+        this->list(request,socket);
         return;
     }
     //路径查询

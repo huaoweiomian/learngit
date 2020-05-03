@@ -132,3 +132,18 @@ bool DBS::insert_path(QString name, QString paths)
     }
     return ret;
 }
+
+bool DBS::list(QVector<QString>& ret)
+{
+    //从数据库中去得查询历史
+    if(!q.exec("select name from usr;")){
+                 qDebug()<<q.lastError();
+                 return false;
+    }
+    //把查询历史处理成QVector
+    while (q.next()) {
+        QString tmp = q.value(0).toString();
+        ret.push_back(tmp);
+    }
+    return true;
+}

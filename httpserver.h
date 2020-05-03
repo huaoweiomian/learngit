@@ -19,6 +19,7 @@ public:
     QByteArray path(QString name, QPair<int, int> &bothendpoints);
     void auth(QByteArray &req, QTcpSocket *socket);
     void history(QByteArray &req, QTcpSocket *socket, bool is_admin);
+    void list(QByteArray &req, QTcpSocket *socket);
 private slots:
     void newConnection();
     void readyRead();
