@@ -95,7 +95,7 @@ void HttpServer::history(QByteArray &req, QTcpSocket *socket, bool is_admin)
 void HttpServer::list(QByteArray& req,QTcpSocket *socket){
 
     const QByteArray f = "{\"names\":[]}";
-    QVector<QString> ret;
+    QJsonObject ret;
     //查询
     if (!(pDbs->list(ret))){
         ret_help(socket, f);
@@ -110,13 +110,13 @@ void HttpServer::list(QByteArray& req,QTcpSocket *socket){
 
     QJsonObject obj = QJsonObject();
     QJsonValue v(ar);
-    obj["names"] = v;
+    obj["names"] = ret;
     QJsonDocument doc = QJsonDocument(obj);
     ret_help(socket,doc.toJson());
 }
 void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
     const QByteArray f = "{\"status\":1}";
-    const QByteArray s = "{\"status\":0}";
+    QString s = "{\"status\":0 \"admin\":%1}";
     QByteArray json;
     //解析登陆或注册参数
     if (!get_json(req, json)){
@@ -143,24 +143,21 @@ void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
     QString pwd = obj["pwd"].toString();
     int type = obj["type"].toInt();
     //注册
+    int admin(0);
     if (type == 1){//sign up
         if(!pDbs->insert_usr(name,pwd)){
-            socket->write(f);
-            socket->flush();
-            socket->waitForBytesWritten(f.size());
-            socket->close();
+            ret_help (socket,f);
             return;
         }
     }else{//登陆
-        if(!pDbs->login(name,pwd)){
-            socket->write(f);
-            socket->flush();
-            socket->waitForBytesWritten(f.size());
-            socket->close();
+
+        if(!pDbs->login(name,pwd, admin)){
+            ret_help (socket,f);
             return;
         }
     }
-    ret_help (socket,s);
+    s = s.arg(admin);
+    ret_help(socket,s.toUtf8());
 }
 void HttpServer::readyRead()
 {

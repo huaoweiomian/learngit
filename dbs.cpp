@@ -1,5 +1,6 @@
 #include "dbs.h"
 #include <QDebug>
+#include <QJsonObject>
 DBS::DBS(QObject *parent) : QObject(parent)
 {
 
@@ -70,12 +71,15 @@ bool DBS::is_admin(QString name)
     return q.size() != 0;
 }
 
-bool DBS::login(QString name, QString pwd)
+bool DBS::login(QString name, QString pwd, int & admin)
 {
     //如果数据库中存在用户信息，就允许用户登陆
-    if(!q.exec("select name from usr where name = '"+name+"' and pwd = '"+pwd+"'")){
+    if(!q.exec("select admin from usr where name = '"+name+"' and pwd = '"+pwd+"'")){
                  qDebug()<<q.lastError();
                  return false;
+    }
+    while (q.next()) {
+        admin = q.value(0).toInt();
     }
     return q.size() != 0;
 }
@@ -133,17 +137,18 @@ bool DBS::insert_path(QString name, QString paths)
     return ret;
 }
 
-bool DBS::list(QVector<QString>& ret)
+bool DBS::list(QJsonObject& ret)
 {
     //从数据库中去得查询历史
-    if(!q.exec("select name from usr;")){
+    if(!q.exec("select name,admin from usr;")){
                  qDebug()<<q.lastError();
                  return false;
     }
     //把查询历史处理成QVector
     while (q.next()) {
-        QString tmp = q.value(0).toString();
-        ret.push_back(tmp);
+        QString key = q.value(0).toString();
+        QJsonValue  v = q.value(1).toInt();
+        ret.insert(key, v);
     }
     return true;
 }
