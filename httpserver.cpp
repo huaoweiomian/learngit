@@ -116,7 +116,7 @@ void HttpServer::list(QByteArray& req,QTcpSocket *socket){
 }
 void HttpServer::signin(QByteArray& req,QTcpSocket *socket){
     const QByteArray f = "{\"status\":1}";
-    QString s = "{\"status\":0 \"admin\":%1}";
+    QString s = "{\"status\":0, \"admin\":%1}";
     QByteArray json;
     //解析登陆或注册参数
     if (!get_json(req, json)){
