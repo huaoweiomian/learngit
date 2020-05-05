@@ -437,8 +437,11 @@ vector<int> dijkstra_candidate( int s, vector<int> &cands, vector<Node> &graph )
 	// return
 	return output;
 }
-
+//save path from start(first int) to end(end int) geted before.
+//when point is cuted, this is used. Cutting causes point lost.
+map< int, map<int,vector<int> > > g_pathcache;
 vector<int> get_paths(int start, int end, unordered_map<int, int> paths){
+    int oldstart = start,oldend = end;
     vector<int> tmp;
     bool is_reverse = false;
     if (paths.end() != paths.find(start)){
@@ -454,8 +457,15 @@ vector<int> get_paths(int start, int end, unordered_map<int, int> paths){
         }
     }
     while(paths.end() != paths.find(start)){
-        tmp.push_back(start);
+        int prestart = start;
+        tmp.push_back(prestart);
         start = paths[start];
+        if(!g_pathcache[prestart][start].empty()){
+            for(auto v : g_pathcache[prestart][start]){
+                if(prestart != v && start != v)
+                    tmp.insert(tmp.end(),v);
+            }
+        }
         if (start == end){
             tmp.push_back(start);
             break;
@@ -464,6 +474,7 @@ vector<int> get_paths(int start, int end, unordered_map<int, int> paths){
     if (is_reverse){
         reverse(tmp.begin(),tmp.end());
     }
+    g_pathcache[oldstart][oldend] = tmp;
     return tmp;
 }
 vector<int> dijkstra_candidate_path( int s, vector<int> &cands, vector<Node> &graph, unordered_map<int, int>& paths ){

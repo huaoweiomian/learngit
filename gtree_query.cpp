@@ -15,6 +15,7 @@ void init_input(){
 	fin = fopen(FILE_NODE,"r");
 	int nid;
 	double x,y;
+    Nodes.clear();
 	while( fscanf(fin, "%d %lf %lf", &nid, &x, &y ) == 3 ){
 		Node node = { x, y };
 		Nodes.push_back(node);
@@ -43,6 +44,7 @@ void init_input(){
 }
 
 void init(){
+
 	init_input();
 	options_setting();
 }
