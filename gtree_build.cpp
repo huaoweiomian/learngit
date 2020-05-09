@@ -191,11 +191,11 @@ void build(){
 
 		// update gtreepath
 		for ( set<int>::iterator it = current.nset.begin(); it != current.nset.end(); it++ ){
-			Nodes[*it].gtreepath.push_back( current.tnid );
+            Nodes[*it].gtreepath.push_back( current.tnid );//记录点所在子图
 		}
 
 		// check cardinality
-		if ( current.nset.size() <= LEAF_CAP ){
+        if ( current.nset.size() <= LEAF_CAP ){//当点的数目少于LEAF_CA创建子图节点
 			// build leaf node
 			GTree[current.tnid].isleaf = true;
 			GTree[current.tnid].leafnodes.clear();
@@ -207,7 +207,7 @@ void build(){
 
 		// partition
 //		printf("PARTITIONING...NID=%d...SIZE=%d...", current.tnid, (int)current.nset.size() );
-		presult = graph_partition( current.nset );
+        presult = graph_partition( current.nset );//分割图
 //		printf("COMPLETE.\n");
 
 		// construct child node set
@@ -217,7 +217,7 @@ void build(){
 		int slot;
 		for ( set<int>::iterator it = current.nset.begin(); it != current.nset.end(); it++ ){
 			slot = presult[*it];
-			childset[slot].insert(*it);
+            childset[slot].insert(*it);//将分割好的两个子图中的节点保存在childset中
 		}
 
 		// generate child tree nodes
@@ -232,7 +232,7 @@ void build(){
 			childpos = GTree.size() - 1;
 			GTree[current.tnid].children.push_back( childpos );
 
-			// calculate border nodes
+            // calculate border nodes 处理border
 			GTree[childpos].borders.clear();
 			for ( set<int>::iterator it = childset[i].begin(); it != childset[i].end(); it++ ){
 

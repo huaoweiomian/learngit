@@ -292,7 +292,7 @@ void pre_query_web(int enda){
         GTree[i].leafinvlist.clear();
     }
 
-
+    //记录终点所在支路
     // set OCCURENCE LIST
     for ( int i = 0; i < o.size(); i++ ){
         int current = Nodes[o[i]].gtreepath.back();
@@ -312,7 +312,7 @@ void pre_query_web(int enda){
     }
 
     // up_pos & current_pos(used for quickly locating parent & child nodes)
-    unordered_map<int,int> pos_map;
+    unordered_map<int,int> pos_map;//在最短路径矩阵中的查找最短路径
     for ( int i = 1; i < GTree.size(); i++ ){
         GTree[i].current_pos.clear();
         GTree[i].up_pos.clear();
@@ -363,6 +363,7 @@ typedef struct{
 //        K = top-K
 // output: a vector of ResultSet, each is a tuple (node id, shortest path), ranked by shortest path distance from query location
 vector<ResultSet> knn_query( int locid, int K ){
+    //处理路径，除掉多余的点，如果有需要调整路径顺序
     auto _get_path = [](vector<int> start, vector<int> patha)->vector<int> {
         if (patha.empty()){
             return start;
@@ -389,10 +390,11 @@ vector<ResultSet> knn_query( int locid, int K ){
     unordered_map<int, vector< vector<int> > > paths;
 	itm.clear();
 	int tn, cid, posa, posb, min, dis;
+    //算出从起点开始到gtree根节点前一个节点的最短路径
 	for ( int i = Nodes[locid].gtreepath.size() - 1; i > 0; i-- ){
 		tn = Nodes[locid].gtreepath[i];
 		itm[tn].clear();
-
+        //记录同一个子节点的最短路径
 		if ( GTree[tn].isleaf ){
 			posa = lower_bound( GTree[tn].leafnodes.begin(), GTree[tn].leafnodes.end(), locid ) - GTree[tn].leafnodes.begin();
 
@@ -404,6 +406,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 			}
 		}
 		else{
+            //计算并记录到达父图border的最短路径
 			cid = Nodes[locid].gtreepath[i+1];
 			for ( int j = 0; j < GTree[tn].borders.size(); j++ ){
                 vector<int> pathmin;
@@ -447,15 +450,15 @@ vector<ResultSet> knn_query( int locid, int K ){
 		pop_heap( pq.begin(), pq.end(), Status_query_comp() );
 		pq.pop_back();
 
-		if ( top.isvertex ){
+        if ( top.isvertex ){//找到终点
             ResultSet rs = { top.id, top.dis,top.path };
 			rstset.push_back(rs);
 		}
 		else{
-			if ( GTree[top.id].isleaf ){
+            if ( GTree[top.id].isleaf ){//当前正在处理的gtree节点是叶子节点
 				// inner of leaf node, do dijkstra
 				if ( top.id == Nodes[locid].gtreepath[top.lca_pos] ){
-					
+                    //在同一个子图，使用dijkstra算出最短路径
 					cands.clear();
 					for ( int i = 0; i < GTree[top.id].leafinvlist.size(); i++ ){
 						cands.push_back( GTree[top.id].leafnodes[GTree[top.id].leafinvlist[i]] );
@@ -472,7 +475,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 				}
 	
 				// else do 
-				else{
+                else{//不在同一个子图,算出终点到border的最短路径，再加上之前记录的到子图的最短路径
 					for ( int i = 0; i < GTree[top.id].leafinvlist.size(); i++ ){
 						posa = GTree[top.id].leafinvlist[i];
 						vertex = GTree[top.id].leafnodes[posa];
@@ -506,17 +509,18 @@ vector<ResultSet> knn_query( int locid, int K ){
                     child = GTree[top.id].nonleafinvlist[i];
 					son = Nodes[locid].gtreepath[ top.lca_pos + 1 ];
 					// on gtreepath
-					if ( child == son ){
+                    if ( child == son ){//在同一支路，沿支路向下走
                         Status_query status = { child, false, top.lca_pos + 1, 0,vector<int>() };
 						pq.push_back(status);
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
 					// brothers
-					else if ( GTree[child].father == GTree[son].father ){
+                    else if ( GTree[child].father == GTree[son].father ){//兄弟节点
 						itm[child].clear();
                         paths[child].clear();
                         vector<int> allpathmin;
 						allmin = -1;
+                        //算出son子图到child子图的最短路径，再加上之前的最短路径得到当前最短路径
 						for ( int j = 0; j < GTree[child].borders.size(); j++ ){
                             vector<int> pathmin;
                             min = -1;
@@ -553,7 +557,7 @@ vector<ResultSet> knn_query( int locid, int K ){
 						push_heap( pq.begin(), pq.end(), Status_query_comp() );
 					}
 					// downstream
-					else{
+                    else{//下游子图，算出父图到子图的最短路径，加上之前的最短路径
 						itm[child].clear();
 						allmin = -1;
                         vector<int> allpathmin;
