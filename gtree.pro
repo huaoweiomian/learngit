@@ -3,7 +3,7 @@ QT -= gui
 
 CONFIG += c++11
 
-TARGET = learngit
+TARGET = gtree
 CONFIG += console
 CONFIG -= app_bundle
 
